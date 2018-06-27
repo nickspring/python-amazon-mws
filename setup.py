@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 from setuptools import setup, find_packages
 
-version = '0.72'
+version = '0.73'
 
 REQUIREMENTS = ['requests']
 

@@ -11,6 +11,8 @@ import hmac
 import base64
 import utils
 import re
+import socket 
+
 try:
     from xml.etree.ElementTree import ParseError as XMLError
 except ImportError:
