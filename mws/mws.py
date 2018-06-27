@@ -143,11 +143,12 @@ class MWS(object):
     # Which is the name of the parameter for that specific account type.
     ACCOUNT_TYPE = "SellerId"
 
-    def __init__(self, access_key, secret_key, account_id, region='US', domain='', uri="", version="", auth_token=""):
+    def __init__(self, access_key, secret_key, account_id, region='US', domain='', uri="", version="", auth_token="", bind_ip=None):
         self.access_key = access_key
         self.secret_key = secret_key
         self.account_id = account_id
         self.auth_token = auth_token
+        self.bind_ip = bind_ip
         self.version = version or self.VERSION
         self.uri = uri or self.URI
 
@@ -161,6 +162,11 @@ class MWS(object):
                 "region" : region,
             }
             raise MWSError(error_msg)
+
+    def bound_socket(self, *a, **k):
+        sock = self.true_socket(*a, **k)
+        sock.bind((self.bind_ip, 0))
+        return sock
 
     def make_request(self, extra_data, method="GET", **kwargs):
         """Make request to Amazon MWS API with these parameters
@@ -188,12 +194,22 @@ class MWS(object):
         headers.update(kwargs.get('extra_headers', {}))
 
         try:
+            # bind ip
+            if self.bind_ip is not None:
+                self.true_socket = socket.socket
+                socket.socket = self.bound_socket
+            
             # Some might wonder as to why i don't pass the params dict as the params argument to request.
             # My answer is, here i have to get the url parsed string of params in order to sign it, so
             # if i pass the params dict as params to request, request will repeat that step because it will need
             # to convert the dict to a url parsed string, so why do it twice if i can just pass the full url :).
             response = request(method, url, data=kwargs.get('body', ''), headers=headers)
             response.raise_for_status()
+            
+            # unbind ip
+            if self.bind_ip is not None:
+                socket.socket = self.true_socket
+            
             # When retrieving data from the response object,
             # be aware that response.content returns the content in bytes while response.text calls
             # response.content and converts it to unicode.
