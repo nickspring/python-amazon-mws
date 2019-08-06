@@ -225,6 +225,10 @@ class MWS(object):
                 parsed_response = DataWrapper(data, response.headers)
 
         except HTTPError, e:
+
+            if self.bind_ip is not None:
+                socket.socket = self.true_socket        
+        
             error = MWSError(str(e.response.text))
             error.response = e.response
             raise error
